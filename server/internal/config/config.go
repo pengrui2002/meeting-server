@@ -14,7 +14,7 @@ type ServerConfig struct {
 
 type MediaConfig struct {
 	WorkerPort int
-	RtcPort   int
+	RtcPort    int
 }
 
 type DatabaseConfig struct {
