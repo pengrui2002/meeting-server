@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: meeting
+      POSTGRES_USER: meeting
+      POSTGRES_PASSWORD: meeting123
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  signal:
+    build: ../server
+    command: ./server
+    ports:
+      - "8080:8080"
+    depends_on:
+      - redis
+      - postgres
+    environment:
+      - DATABASE_URL=postgres://meeting:meeting123@postgres:5432/meeting
+      - REDIS_URL=redis://redis:6379
+
+  mediasoup:
+    image: versori/mediasoup:latest
+    ports:
+      - "40000-40100:40000-40100/udp"
+    environment:
+      - MEDIASOUP_LISTEN_IP=0.0.0.0
+      - MEDIASOUP_ANNOUNCED_IP=127.0.0.1
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - signal
+
+volumes:
+  redis_data:
+  postgres_data:
