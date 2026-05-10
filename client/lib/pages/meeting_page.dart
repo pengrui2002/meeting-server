@@ -16,6 +16,7 @@ class MeetingPage extends StatefulWidget {
 class _MeetingPageState extends State<MeetingPage> {
   final Map<String, RTCVideoRenderer> _renderers = {};
   bool _isInitialized = false;
+  bool _isRecording = false;
 
   @override
   void initState() {
@@ -204,6 +205,22 @@ class _MeetingPageState extends State<MeetingPage> {
               isActive: false,
               isEndCall: true,
             ),
+            _buildControlButton(
+              icon: _isRecording ? Icons.stop_circle : Icons.fiber_manual_record,
+              label: _isRecording ? '停止录制' : '开始录制',
+              onPressed: () {
+                setState(() {
+                  _isRecording = !_isRecording;
+                });
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(_isRecording ? '开始录制' : '停止录制'),
+                  ),
+                );
+              },
+              isActive: !_isRecording,
+              isRecording: _isRecording,
+            ),
           ],
         ),
       ),
@@ -216,6 +233,7 @@ class _MeetingPageState extends State<MeetingPage> {
     required VoidCallback onPressed,
     required bool isActive,
     bool isEndCall = false,
+    bool isRecording = false,
   }) {
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -230,7 +248,7 @@ class _MeetingPageState extends State<MeetingPage> {
             padding: const EdgeInsets.all(16),
           ),
           iconSize: 28,
-          color: Colors.white,
+          color: isRecording ? Colors.red : Colors.white,
         ),
         const SizedBox(height: 4),
         Text(

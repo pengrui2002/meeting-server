@@ -1,8 +1,9 @@
 package signal
 
 import (
-	"github.com/google/uuid"
 	"sync"
+
+	"meeting-server/internal/sfu"
 )
 
 type Room struct {
@@ -12,15 +13,18 @@ type Room struct {
 	unregister chan *Client
 	broadcast  chan []byte
 	mu         sync.Mutex
+	sfuClient  *sfu.Client
+	sfuRoomID  string
 }
 
-func NewRoom() *Room {
+func NewRoom(id string, sfuClient *sfu.Client) *Room {
 	return &Room{
-		ID:         uuid.New().String(),
+		ID:         id,
 		clients:    make(map[*Client]bool),
 		register:   make(chan *Client),
 		unregister: make(chan *Client),
 		broadcast:  make(chan []byte),
+		sfuClient:  sfuClient,
 	}
 }
 

@@ -4,6 +4,8 @@ import (
 	"log"
 	"net/http"
 
+	"meeting-server/internal/sfu"
+
 	"github.com/gorilla/websocket"
 )
 
@@ -25,14 +27,16 @@ type Hub struct {
 	register   chan *Client
 	unregister chan *Client
 	broadcast  chan BroadcastMessage
+	sfuClient  *sfu.Client
 }
 
-func NewHub() *Hub {
+func NewHub(sfuClient *sfu.Client) *Hub {
 	return &Hub{
 		rooms:      make(map[string]*Room),
 		register:   make(chan *Client),
 		unregister: make(chan *Client),
 		broadcast:  make(chan BroadcastMessage),
+		sfuClient:  sfuClient,
 	}
 }
 
@@ -42,7 +46,7 @@ func (h *Hub) Run() {
 		case client := <-h.register:
 			room, ok := h.rooms[client.roomID]
 			if !ok {
-				room = NewRoom()
+				room = NewRoom(client.roomID, h.sfuClient)
 				h.rooms[client.roomID] = room
 				go room.Run()
 			}

@@ -6,8 +6,9 @@ type Meeting struct {
 	ID        string    `json:"id"`
 	Title     string    `json:"title"`
 	Password  string    `json:"-"`
-	CreatedAt time.Time `json:"created_at"`
+	HostID    string    `json:"host_id"`
 	Status    string    `json:"status"` // pending, active, ended
+	CreatedAt time.Time `json:"created_at"`
 }
 
 type Participant struct {
