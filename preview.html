@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>视频会议 - 离线演示版</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; }
+
+.container { max-width: 420px; margin: 0 auto; background: #fff; min-height: 100vh; box-shadow: 0 0 40px rgba(0,0,0,0.1); }
+
+/* 头部 */
+.header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; display: flex; align-items: center; gap: 12px; }
+.header svg { width: 28px; height: 28px; fill: white; }
+.header h1 { font-size: 18px; font-weight: 600; }
+
+/* 页面 */
+.page { padding: 24px; display: none; }
+.page.active { display: block; }
+
+/* 登录表单 */
+.login-icon { width: 80px; height: 80px; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 20px; display: flex; align-items: center; justify-content: center; margin: 20px auto 16px; box-shadow: 0 8px 24px rgba(102,126,234,0.4); }
+.login-icon svg { width: 48px; height: 48px; fill: white; }
+.login-title { text-align: center; font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+.login-subtitle { text-align: center; color: #888; font-size: 14px; margin-bottom: 30px; }
+
+.form-group { margin-bottom: 16px; }
+.form-group label { display: block; font-size: 13px; color: #333; margin-bottom: 8px; font-weight: 500; }
+.form-group input { width: 100%; padding: 14px 16px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; outline: none; transition: all 0.2s; background: #fafafa; }
+.form-group input:focus { border-color: #667eea; background: #fff; box-shadow: 0 0 0 3px rgba(102,126,234,0.1); }
+.form-group input::placeholder { color: #aaa; }
+
+.btn { width: 100%; padding: 16px; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; border: none; margin-bottom: 12px; transition: all 0.2s; }
+.btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(102,126,234,0.4); }
+.btn-primary:active { transform: translateY(0); }
+.btn-outline { background: transparent; border: 2px solid #667eea; color: #667eea; }
+.btn-outline:hover { background: #f8f5ff; }
+
+.text-center { text-align: center; }
+.text-link { color: #667eea; cursor: pointer; font-size: 14px; }
+.text-link:hover { text-decoration: underline; }
+.error-msg { color: #ff3b30; font-size: 13px; margin-top: -8px; margin-bottom: 12px; display: none; }
+
+/* 首页 */
+.home-welcome { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px 20px; border-radius: 16px; margin-bottom: 24px; }
+.home-welcome h2 { font-size: 20px; margin-bottom: 4px; }
+.home-welcome p { opacity: 0.9; font-size: 14px; }
+
+.action-card { background: #f8f9fa; border-radius: 14px; padding: 20px; margin-bottom: 12px; display: flex; align-items: center; gap: 16px; cursor: pointer; transition: all 0.2s; }
+.action-card:hover { background: #f0f4ff; transform: translateX(4px); }
+.action-icon { width: 48px; height: 48px; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 12px; display: flex; align-items: center; justify-content: center; }
+.action-icon svg { width: 24px; height: 24px; fill: white; }
+.action-content h3 { font-size: 15px; font-weight: 600; margin-bottom: 2px; }
+.action-content p { font-size: 13px; color: #888; }
+
+.meeting-card { background: #f8f9fa; border-radius: 14px; padding: 16px; margin-bottom: 12px; display: flex; align-items: center; gap: 12px; }
+.meeting-status { width: 10px; height: 10px; border-radius: 50%; background: #34c759; }
+.meeting-status.ended { background: #ff9500; }
+.meeting-info { flex: 1; }
+.meeting-title { font-size: 14px; font-weight: 600; }
+.meeting-meta { font-size: 12px; color: #888; margin-top: 2px; }
+.meeting-badge { font-size: 11px; padding: 4px 8px; border-radius: 6px; background: #e8f5e9; color: #34c759; }
+
+/* 会议页 */
+.meeting-header { background: #1c1c1e; color: white; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; }
+.meeting-id { font-size: 14px; opacity: 0.8; }
+.copy-btn { background: none; border: none; color: white; cursor: pointer; padding: 8px; border-radius: 8px; }
+.copy-btn:hover { background: rgba(255,255,255,0.1); }
+
+.video-area { background: #000; min-height: 320px; padding: 8px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.video-tile { background: #2a2a2a; border-radius: 10px; aspect-ratio: 16/9; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+.video-tile video { width: 100%; height: 100%; object-fit: cover; }
+.video-avatar { width: 56px; height: 56px; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; font-weight: 600; }
+.video-name { position: absolute; bottom: 8px; left: 8px; background: rgba(0,0,0,0.6); color: white; padding: 4px 10px; border-radius: 6px; font-size: 12px; }
+.video-muted { position: absolute; top: 8px; right: 8px; background: rgba(255,59,48,0.8); width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+.video-muted svg { width: 14px; height: 14px; fill: white; }
+
+.controls { background: #1c1c1e; padding: 20px; display: flex; justify-content: space-around; }
+.ctrl-btn { display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; }
+.ctrl-btn button { width: 54px; height: 54px; border-radius: 50%; border: none; background: #3a3a3c; color: white; font-size: 22px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
+.ctrl-btn button:hover { background: #555; }
+.ctrl-btn button.active { background: #007AFF; }
+.ctrl-btn button.danger { background: #ff3b30; }
+.ctrl-btn button.danger:hover { background: #d32f2f; }
+.ctrl-btn span { color: #999; font-size: 11px; }
+
+/* Toast */
+.toast { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); color: white; padding: 16px 32px; border-radius: 12px; font-size: 14px; z-index: 1000; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+.toast.show { opacity: 1; }
+
+/* 加载动画 */
+.loading { display: inline-block; width: 20px; height: 20px; border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: white; animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <!-- 头部 -->
+  <div class="header">
+    <svg viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
+    <h1>知舌否 · 视频会议</h1>
+  </div>
+
+  <!-- 登录页 -->
+  <div id="loginPage" class="page active">
+    <div class="login-icon">
+      <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+    </div>
+    <div class="login-title">欢迎回来</div>
+    <div class="login-subtitle">登录您的账户</div>
+
+    <div id="loginError" class="error-msg">用户名或密码错误</div>
+
+    <div class="form-group">
+      <label>用户名</label>
+      <input type="text" id="loginUsername" placeholder="请输入用户名" value="admin">
+    </div>
+    <div class="form-group">
+      <label>密码</label>
+      <input type="password" id="loginPassword" placeholder="请输入密码" value="123456">
+    </div>
+
+    <button class="btn btn-primary" id="loginBtn" onclick="doLogin()">登录</button>
+    <div class="text-center">
+      <span class="text-link" onclick="showPage('register')">还没有账号？立即注册</span>
+    </div>
+  </div>
+
+  <!-- 注册页 -->
+  <div id="registerPage" class="page">
+    <div class="login-icon">
+      <svg viewBox="0 0 24 24"><path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+    </div>
+    <div class="login-title">创建账号</div>
+    <div class="login-subtitle">注册后即可使用视频会议</div>
+
+    <div class="form-group">
+      <label>显示名称</label>
+      <input type="text" id="regDisplayName" placeholder="请输入显示名称" value="张三">
+    </div>
+    <div class="form-group">
+      <label>用户名</label>
+      <input type="text" id="regUsername" placeholder="请输入用户名" value="zhangsan">
+    </div>
+    <div class="form-group">
+      <label>密码</label>
+      <input type="password" id="regPassword" placeholder="请输入密码" value="123456">
+    </div>
+
+    <button class="btn btn-primary" id="regBtn" onclick="doRegister()">注册</button>
+    <div class="text-center">
+      <span class="text-link" onclick="showPage('login')">已有账号？立即登录</span>
+    </div>
+  </div>
+
+  <!-- 首页 -->
+  <div id="homePage" class="page">
+    <div class="home-welcome">
+      <h2 id="welcomeName">张三</h2>
+      <p>欢迎使用视频会议系统</p>
+    </div>
+
+    <div class="action-card" onclick="createMeeting()">
+      <div class="action-icon">
+        <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+      </div>
+      <div class="action-content">
+        <h3>创建会议</h3>
+        <p>发起一个新的视频会议</p>
+      </div>
+    </div>
+
+    <div class="action-card" onclick="showPage('join')">
+      <div class="action-icon">
+        <svg viewBox="0 0 24 24"><path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+      </div>
+      <div class="action-content">
+        <h3>加入会议</h3>
+        <p>输入会议号加入</p>
+      </div>
+    </div>
+
+    <div style="margin-top: 24px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <span style="font-weight:600;font-size:14px;">我的会议</span>
+        <span style="color:#667eea;font-size:13px;cursor:pointer;">查看全部</span>
+      </div>
+
+      <div class="meeting-card">
+        <div class="meeting-status"></div>
+        <div class="meeting-info">
+          <div class="meeting-title">产品周会</div>
+          <div class="meeting-meta">今天 14:00 · 3人参会</div>
+        </div>
+        <div class="meeting-badge">进行中</div>
+      </div>
+
+      <div class="meeting-card">
+        <div class="meeting-status ended"></div>
+        <div class="meeting-info">
+          <div class="meeting-title">技术分享会</div>
+          <div class="meeting-meta">昨天 15:00 · 12人参会</div>
+        </div>
+        <div class="meeting-badge" style="background:#fff3e0;color:#ff9500;">已结束</div>
+      </div>
+    </div>
+
+    <div style="margin-top:24px;padding-top:16px;border-top:1px solid #eee;text-align:center;">
+      <span class="text-link" onclick="doLogout()">退出登录</span>
+    </div>
+  </div>
+
+  <!-- 加入会议页 -->
+  <div id="joinPage" class="page">
+    <div class="login-icon" style="width:64px;height:64px;">
+      <svg viewBox="0 0 24 24" style="width:32px;height:32px;"><path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+    </div>
+    <div class="login-title">加入会议</div>
+    <div class="login-subtitle">输入会议号加入</div>
+
+    <div class="form-group" style="margin-top:20px;">
+      <label>会议号</label>
+      <input type="text" id="meetingCode" placeholder="请输入8位会议号" value="12345678">
+    </div>
+
+    <button class="btn btn-primary" onclick="joinMeeting()">加入会议</button>
+    <div class="text-center">
+      <span class="text-link" onclick="showPage('home')">返回首页</span>
+    </div>
+  </div>
+
+  <!-- 会议页 -->
+  <div id="meetingPage" class="page" style="padding:0;">
+    <div class="meeting-header">
+      <div>
+        <div class="meeting-id">会议号: <span id="currentMeetingId">12345678</span></div>
+      </div>
+      <button class="copy-btn" onclick="copyMeetingId()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+      </button>
+    </div>
+
+    <div class="video-area">
+      <div class="video-tile">
+        <div class="video-avatar">我</div>
+        <div class="video-name">我</div>
+        <div class="video-muted" id="micIcon" style="display:none;">
+          <svg viewBox="0 0 24 24"><path d="M19 11h-1.7c0 .74-.16 1.43-.43 2.05l1.23 1.23c.56-.98.9-2.09.9-3.28zm-4.02.17c0-.06.02-.11.02-.17V5c0-1.66-1.34-3-3-3S9 3.34 9 5v.18l5.98 5.99zM4.27 3L3 4.27l6.01 6.01V11c0 1.66 1.33 3 2.99 3 .22 0 .44-.03.65-.08l1.66 1.66c-.71.33-1.5.52-2.31.52-2.76 0-5.3-2.1-5.3-5.1H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c.91-.13 1.77-.45 2.54-.9l4.19 4.18 1.27-1.27L4.27 3z"/></svg>
+        </div>
+      </div>
+      <div class="video-tile">
+        <div class="video-avatar">张</div>
+        <div class="video-name">张三</div>
+      </div>
+      <div class="video-tile">
+        <div class="video-avatar">李</div>
+        <div class="video-name">李四</div>
+      </div>
+      <div class="video-tile">
+        <div class="video-avatar">王</div>
+        <div class="video-name">王五</div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <div class="ctrl-btn" onclick="toggleMute()">
+        <button id="micBtn" class="active">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1 1.93c-3.94-.49-7-3.85-7-7.93h2c0 3.31 2.69 6 6 6s6-2.69 6-6h2c0 4.08-3.06 7.44-7 7.93V19h4v2H8v-2h4v-3.07z"/></svg>
+        </button>
+        <span id="micLabel">静音</span>
+      </div>
+      <div class="ctrl-btn" onclick="toggleVideo()">
+        <button id="videoBtn" class="active">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
+        </button>
+        <span id="videoLabel">关闭视频</span>
+      </div>
+      <div class="ctrl-btn" onclick="shareScreen()">
+        <button>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M20 18c1.1 0 1.99-.9 1.99-2L22 6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2H0v2h24v-2h-4zM4 6h16v10H4V6z"/></svg>
+        </button>
+        <span>共享屏幕</span>
+      </div>
+      <div class="ctrl-btn" onclick="showParticipants()">
+        <button>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+        </button>
+        <span>参会人</span>
+      </div>
+      <div class="ctrl-btn" onclick="leaveMeeting()">
+        <button class="danger">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08c-.18-.17-.29-.42-.29-.7 0-.28.11-.53.29-.71C3.34 8.78 7.46 7 12 7s8.66 1.78 11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.71l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.11-.7-.28-.79-.74-1.69-1.36-2.67-1.85-.33-.16-.56-.5-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"/></svg>
+        </button>
+        <span>挂断</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let currentUser = null;
+let isMuted = false;
+let isVideoOff = false;
+
+function showPage(pageId) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(pageId + 'Page').classList.add('active');
+}
+
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2000);
+}
+
+function doLogin() {
+  const username = document.getElementById('loginUsername').value;
+  const password = document.getElementById('loginPassword').value;
+
+  if (!username || !password) {
+    document.getElementById('loginError').style.display = 'block';
+    document.getElementById('loginError').textContent = '请输入用户名和密码';
+    return;
+  }
+
+  // 离线演示：任意用户名密码都能登录
+  const btn = document.getElementById('loginBtn');
+  btn.innerHTML = '<span class="loading"></span>';
+  btn.disabled = true;
+
+  setTimeout(() => {
+    currentUser = { username: username, displayName: username };
+    document.getElementById('welcomeName').textContent = username;
+    btn.innerHTML = '登录';
+    btn.disabled = false;
+    showPage('home');
+    showToast('登录成功');
+  }, 800);
+}
+
+function doRegister() {
+  const displayName = document.getElementById('regDisplayName').value;
+  const username = document.getElementById('regUsername').value;
+  const password = document.getElementById('regPassword').value;
+
+  if (!displayName || !username || !password) {
+    showToast('请填写所有字段');
+    return;
+  }
+
+  const btn = document.getElementById('regBtn');
+  btn.innerHTML = '<span class="loading"></span>';
+  btn.disabled = true;
+
+  setTimeout(() => {
+    currentUser = { username: username, displayName: displayName };
+    document.getElementById('welcomeName').textContent = displayName;
+    btn.innerHTML = '注册';
+    btn.disabled = false;
+    showPage('home');
+    showToast('注册成功');
+  }, 800);
+}
+
+function doLogout() {
+  currentUser = null;
+  showPage('login');
+  showToast('已退出登录');
+}
+
+function createMeeting() {
+  const meetingId = Math.random().toString().slice(2, 10);
+  document.getElementById('currentMeetingId').textContent = meetingId;
+  showPage('meeting');
+  showToast('会议已创建');
+}
+
+function joinMeeting() {
+  const code = document.getElementById('meetingCode').value;
+  if (!code) {
+    showToast('请输入会议号');
+    return;
+  }
+  document.getElementById('currentMeetingId').textContent = code;
+  showPage('meeting');
+  showToast('已加入会议');
+}
+
+function copyMeetingId() {
+  const id = document.getElementById('currentMeetingId').textContent;
+  navigator.clipboard.writeText(id).then(() => showToast('会议号已复制'));
+}
+
+function toggleMute() {
+  isMuted = !isMuted;
+  const btn = document.getElementById('micBtn');
+  const label = document.getElementById('micLabel');
+  const icon = document.getElementById('micIcon');
+
+  if (isMuted) {
+    btn.classList.remove('active');
+    label.textContent = '取消静音';
+    icon.style.display = 'flex';
+  } else {
+    btn.classList.add('active');
+    label.textContent = '静音';
+    icon.style.display = 'none';
+  }
+}
+
+function toggleVideo() {
+  isVideoOff = !isVideoOff;
+  const btn = document.getElementById('videoBtn');
+  const label = document.getElementById('videoLabel');
+
+  if (isVideoOff) {
+    btn.classList.remove('active');
+    label.textContent = '开启视频';
+  } else {
+    btn.classList.add('active');
+    label.textContent = '关闭视频';
+  }
+  showToast(isVideoOff ? '摄像头已关闭' : '摄像头已开启');
+}
+
+function shareScreen() {
+  showToast('屏幕共享已开启');
+}
+
+function showParticipants() {
+  showToast('4人参会');
+}
+
+function leaveMeeting() {
+  showPage('home');
+  showToast('已离开会议');
+}
+</script>
+
+</body>
+</html>

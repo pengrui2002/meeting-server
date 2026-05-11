@@ -1,78 +1,90 @@
 version: '3.8'
 
 services:
-  redis:
-    image: redis:7-alpine
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-
-  postgres:
-    image: postgres:15-alpine
-    environment:
-      POSTGRES_DB: meeting
-      POSTGRES_USER: meeting
-      POSTGRES_PASSWORD: meeting123
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-
-  signal:
-    build: ../server
-    command: ./server
-    ports:
-      - "8080:8080"
-    depends_on:
-      - redis
-      - postgres
-    environment:
-      - DATABASE_URL=postgres://meeting:meeting123@postgres:5432/meeting
-      - REDIS_URL=redis://redis:6379
-
-  mediasoup:
-    image: versori/mediasoup:latest
-    ports:
-      - "40000-40100:40000-40100/udp"
-    environment:
-      - MEDIASOUP_LISTEN_IP=0.0.0.0
-      - MEDIASOUP_ANNOUNCED_IP=127.0.0.1
-
+  # Nginx 反向代理 + 前端静态文件
   nginx:
     image: nginx:alpine
+    container_name: meeting-nginx
     ports:
       - "80:80"
       - "443:443"
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ../web:/usr/share/nginx/html:ro
     depends_on:
-      - signal
+      - server
+    networks:
+      - meeting-net
+    restart: unless-stopped
 
-  minio:
-    image: minio/minio
-    ports:
-      - "9000:9000"
-      - "9001:9001"
+  # Go 信令服务器
+  server:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.server
+    container_name: meeting-server
     environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
-    volumes:
-      - minio_data:/data
-    command: server /data --console-address ":9001"
-
-  minio-init:
-    image: minio/mc
+      - DATABASE_URL=postgres://meeting:meeting123@postgres:5432/meeting?sslmode=disable
+      - SFU_URL=http://sfu:3000
+      - JWT_SECRET=your-secret-key-change-in-production
+      - WECHAT_APP_ID=${WECHAT_APP_ID:-}
+      - WECHAT_APP_SECRET=${WECHAT_APP_SECRET:-}
     depends_on:
-      - minio
-    entrypoint: >
-      /bin/sh -c "
-      mc alias set myminio http://minio:9000 minioadmin minioadmin;
-      mc mb myminio/recordings --ignore-existing;
-      exit 0;
-      "
+      - postgres
+    networks:
+      - meeting-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # mediasoup SFU 服务
+  sfu:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.sfu
+    container_name: meeting-sfu
+    ports:
+      - "3000:3000"
+      - "40000-40100:40000-40100/udp"
+    environment:
+      - MEDIASOUP_ANNOUNCED_IP=${SFU_IP:-}
+    networks:
+      - meeting-net
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # PostgreSQL 数据库
+  postgres:
+    image: postgres:15-alpine
+    container_name: meeting-db
+    environment:
+      - POSTGRES_PASSWORD=meeting123
+      - POSTGRES_DB=meeting
+      - POSTGRES_USER=meeting
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - meeting-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U meeting -d meeting"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  meeting-net:
+    driver: bridge
 
 volumes:
-  redis_data:
-  postgres_data:
-  minio_data:
+  postgres-data:

@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AFT集团线上服务平台</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #fff;
+        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+
+        /* 头部 */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 24px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 16px;
+            margin-bottom: 24px;
+        }
+        .header-left { display: flex; align-items: center; gap: 12px; }
+        .logo { width: 48px; height: 48px; border-radius: 50%; object-fit: contain; background: #fff; }
+        .header-title { font-size: 20px; font-weight: 600; }
+        .header-user { display: flex; align-items: center; gap: 12px; }
+        .user-avatar {
+            width: 40px; height: 40px; border-radius: 50%;
+            background: linear-gradient(135deg, #07c160, #06ad56);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px; font-weight: 500;
+        }
+        .btn {
+            padding: 10px 20px; border: none; border-radius: 8px;
+            font-size: 14px; cursor: pointer; transition: all 0.2s;
+        }
+        .btn-primary { background: #07c160; color: #fff; }
+        .btn-primary:hover { background: #06ad56; }
+        .btn-secondary { background: rgba(255,255,255,0.1); color: #fff; }
+        .btn-secondary:hover { background: rgba(255,255,255,0.2); }
+
+        /* 主功能区 */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+        .card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 16px;
+            padding: 32px;
+        }
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .card-title svg { width: 24px; height: 24px; color: #07c160; }
+
+        /* 创建会议 */
+        .create-form { display: flex; flex-direction: column; gap: 16px; }
+        .form-group label { display: block; font-size: 13px; color: rgba(255,255,255,0.7); margin-bottom: 6px; }
+        .form-input {
+            width: 100%; padding: 14px 16px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 8px;
+            color: #fff; font-size: 14px;
+        }
+        .form-input:focus { outline: none; border-color: #07c160; }
+        .form-input::placeholder { color: rgba(255,255,255,0.4); }
+
+        /* 加入会议 */
+        .join-form { display: flex; flex-direction: column; gap: 16px; }
+
+        /* 会议号输入 */
+        .meeting-id-input {
+            display: flex; gap: 10px; align-items: center;
+        }
+        .meeting-id-input .form-input { flex: 1; }
+
+        /* 会议列表 */
+        .meeting-list {
+            grid-column: 1 / -1;
+            background: rgba(255,255,255,0.05);
+            border-radius: 16px;
+            padding: 24px;
+        }
+        .meeting-list-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 16px;
+        }
+        .meeting-item {
+            display: flex; align-items: center; gap: 16px;
+            padding: 16px; background: rgba(255,255,255,0.03);
+            border-radius: 12px; margin-bottom: 12px;
+            cursor: pointer; transition: background 0.2s;
+        }
+        .meeting-item:hover { background: rgba(255,255,255,0.08); }
+        .meeting-icon {
+            width: 48px; height: 48px; border-radius: 10px;
+            background: rgba(7,193,96,0.2);
+            display: flex; align-items: center; justify-content: center;
+        }
+        .meeting-icon svg { width: 24px; height: 24px; color: #07c160; }
+        .meeting-info { flex: 1; }
+        .meeting-name { font-size: 15px; margin-bottom: 4px; }
+        .meeting-meta { font-size: 12px; color: rgba(255,255,255,0.5); }
+        .meeting-status {
+            padding: 4px 12px; border-radius: 12px; font-size: 12px;
+        }
+        .meeting-status.active { background: rgba(7,193,96,0.2); color: #07c160; }
+        .meeting-status.ended { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.5); }
+
+        .empty-state {
+            text-align: center; padding: 48px; color: rgba(255,255,255,0.4);
+        }
+        .empty-state svg { width: 48px; height: 48px; margin-bottom: 12px; opacity: 0.5; }
+
+        /* 模态框 */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7); display: none;
+            align-items: center; justify-content: center; z-index: 1000;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal {
+            background: #1e1e1e; border-radius: 16px;
+            padding: 24px; width: 400px; max-width: 90%;
+        }
+        .modal-title { font-size: 18px; margin-bottom: 16px; }
+        .modal-input {
+            width: 100%; padding: 12px 16px;
+            background: #252525; border: 1px solid #333;
+            border-radius: 8px; color: #fff; font-size: 14px;
+            margin-bottom: 16px;
+        }
+        .modal-buttons { display: flex; gap: 12px; justify-content: flex-end; }
+        .modal-btn {
+            padding: 10px 20px; border-radius: 8px;
+            border: none; font-size: 14px; cursor: pointer;
+        }
+        .modal-btn.cancel { background: #333; color: #fff; }
+        .modal-btn.confirm { background: #07c160; color: #fff; }
+
+        /* Toast */
+        .toast {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+            background: #333; color: #fff; padding: 12px 24px;
+            border-radius: 8px; font-size: 14px;
+            opacity: 0; transition: opacity 0.3s;
+        }
+        .toast.show { opacity: 1; }
+
+        @media (max-width: 768px) {
+            .main-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="header-left">
+                <img src="logo.png" class="logo" alt="Logo">
+                <span class="header-title">AFT集团线上服务平台</span>
+            </div>
+            <div class="header-user">
+                <div class="user-avatar" id="userAvatar">A</div>
+                <span id="userName">用户</span>
+                <button class="btn btn-secondary" onclick="logout()">退出</button>
+            </div>
+        </header>
+
+        <div class="main-grid">
+            <!-- 创建会议 -->
+            <div class="card">
+                <div class="card-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="8" x2="12" y2="16"/>
+                        <line x1="8" y1="12" x2="16" y2="12"/>
+                    </svg>
+                    创建会议
+                </div>
+                <div class="create-form">
+                    <div class="form-group">
+                        <label>会议名称</label>
+                        <input type="text" class="form-input" id="meetingName" placeholder="请输入会议名称">
+                    </div>
+                    <div class="form-group">
+                        <label>您的姓名</label>
+                        <input type="text" class="form-input" id="hostName" placeholder="请输入您的姓名">
+                    </div>
+                    <button class="btn btn-primary" onclick="createMeeting()">创建会议</button>
+                </div>
+            </div>
+
+            <!-- 加入会议 -->
+            <div class="card">
+                <div class="card-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+                        <polyline points="10 17 15 12 10 7"/>
+                        <line x1="15" y1="12" x2="3" y2="12"/>
+                    </svg>
+                    加入会议
+                </div>
+                <div class="join-form">
+                    <div class="form-group">
+                        <label>会议号码</label>
+                        <input type="text" class="form-input" id="joinCode" placeholder="请输入会议号码">
+                    </div>
+                    <div class="form-group">
+                        <label>您的姓名</label>
+                        <input type="text" class="form-input" id="joinName" placeholder="请输入您的姓名">
+                    </div>
+                    <button class="btn btn-primary" onclick="joinMeeting()">加入</button>
+                </div>
+            </div>
+
+            <!-- 最近会议 -->
+            <div class="meeting-list">
+                <div class="meeting-list-header">
+                    <div class="card-title" style="margin:0">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <polyline points="12 6 12 12 16 14"/>
+                        </svg>
+                        最近会议
+                    </div>
+                </div>
+                <div id="meetingListContent">
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                            <line x1="16" y1="2" x2="16" y2="6"/>
+                            <line x1="8" y1="2" x2="8" y2="6"/>
+                            <line x1="3" y1="10" x2="21" y2="10"/>
+                        </svg>
+                        <p>暂无最近会议</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 离开确认 -->
+    <div class="modal-overlay" id="leaveModal">
+        <div class="modal">
+            <div class="modal-title">确认离开？</div>
+            <div class="modal-buttons">
+                <button class="modal-btn cancel" onclick="closeModal()">取消</button>
+                <button class="modal-btn confirm" onclick="confirmLogout()">确认</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // 初始化
+        function init() {
+            const user = JSON.parse(localStorage.getItem('afrt_user') || 'null');
+            if (!user) {
+                // 首次使用，设置用户名
+                const name = prompt('请输入您的姓名：', '用户' + Math.floor(Math.random() * 1000));
+                if (!name) {
+                    location.reload();
+                    return;
+                }
+                const newUser = {
+                    id: 'user_' + Date.now(),
+                    name: name,
+                    avatar: name.charAt(0).toUpperCase()
+                };
+                localStorage.setItem('afrt_user', JSON.stringify(newUser));
+                location.reload();
+                return;
+            }
+
+            document.getElementById('userAvatar').textContent = user.avatar || user.name.charAt(0).toUpperCase();
+            document.getElementById('userName').textContent = user.name;
+            document.getElementById('hostName').value = user.name;
+            document.getElementById('joinName').value = user.name;
+
+            loadMeetings();
+        }
+
+        // 生成会议号
+        function generateMeetingId() {
+            const p = () => Math.floor(100 + Math.random() * 900);
+            return `${p()}-${p()}-${p()}`;
+        }
+
+        // 创建会议
+        function createMeeting() {
+            const name = document.getElementById('meetingName').value.trim() || '在线会议';
+            const user = JSON.parse(localStorage.getItem('afrt_user'));
+            const meetingId = generateMeetingId();
+
+            const meeting = {
+                id: meetingId,
+                name: name,
+                host: user.name,
+                hostId: user.id,
+                createdAt: new Date().toISOString(),
+                status: 'active'
+            };
+
+            // 保存
+            const meetings = JSON.parse(localStorage.getItem('afrt_meetings') || '[]');
+            meetings.unshift(meeting);
+            localStorage.setItem('afrt_meetings', JSON.stringify(meetings.slice(0, 20)));
+
+            showToast('会议创建成功！');
+            loadMeetings();
+
+            // 复制会议号
+            navigator.clipboard.writeText(meetingId);
+            setTimeout(() => {
+                window.location.href = `classroom.html?id=${meetingId}&name=${encodeURIComponent(name)}&host=1`;
+            }, 500);
+        }
+
+        // 加入会议
+        function joinMeeting() {
+            const code = document.getElementById('joinCode').value.trim();
+            const name = document.getElementById('joinName').value.trim();
+
+            if (!code) {
+                showToast('请输入会议号码');
+                return;
+            }
+            if (!name) {
+                showToast('请输入您的姓名');
+                return;
+            }
+
+            // 更新用户信息
+            const user = JSON.parse(localStorage.getItem('afrt_user'));
+            user.name = name;
+            localStorage.setItem('afrt_user', JSON.stringify(user));
+
+            // 保存到最近
+            const meetings = JSON.parse(localStorage.getItem('afrt_meetings') || '[]');
+            const existing = meetings.findIndex(m => m.id === code);
+            if (existing !== -1) {
+                meetings.splice(existing, 1);
+                meetings.unshift({
+                    ...meetings[existing > 0 ? 0 : 0],
+                    id: code,
+                    name: '在线会议',
+                    status: 'active'
+                });
+            } else {
+                meetings.unshift({
+                    id: code,
+                    name: '在线会议',
+                    host: '未知',
+                    createdAt: new Date().toISOString(),
+                    status: 'active'
+                });
+            }
+            localStorage.setItem('afrt_meetings', JSON.stringify(meetings.slice(0, 20)));
+
+            window.location.href = `classroom.html?id=${code}&name=${encodeURIComponent('在线会议')}&host=0`;
+        }
+
+        // 加载会议列表
+        function loadMeetings() {
+            const meetings = JSON.parse(localStorage.getItem('afrt_meetings') || '[]');
+            const content = document.getElementById('meetingListContent');
+
+            if (meetings.length === 0) {
+                content.innerHTML = `
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                            <line x1="16" y1="2" x2="16" y2="6"/>
+                            <line x1="8" y1="2" x2="8" y2="6"/>
+                            <line x1="3" y1="10" x2="21" y2="10"/>
+                        </svg>
+                        <p>暂无最近会议</p>
+                    </div>
+                `;
+                return;
+            }
+
+            content.innerHTML = meetings.map(m => `
+                <div class="meeting-item" onclick="openMeeting('${m.id}', '${m.name}')">
+                    <div class="meeting-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M23 7l-7 5 7 5V7z"/>
+                            <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+                        </svg>
+                    </div>
+                    <div class="meeting-info">
+                        <div class="meeting-name">${m.name}</div>
+                        <div class="meeting-meta">${m.id} · ${formatTime(m.createdAt)}</div>
+                    </div>
+                    <div class="meeting-status ${m.status}">${m.status === 'active' ? '进行中' : '已结束'}</div>
+                </div>
+            `).join('');
+        }
+
+        // 打开会议
+        function openMeeting(id, name) {
+            const user = JSON.parse(localStorage.getItem('afrt_user'));
+            window.location.href = `classroom.html?id=${id}&name=${encodeURIComponent(name)}&host=0`;
+        }
+
+        // 格式化时间
+        function formatTime(isoString) {
+            if (!isoString) return '';
+            const d = new Date(isoString);
+            const now = new Date();
+            const diff = now - d;
+
+            if (diff < 60000) return '刚刚';
+            if (diff < 3600000) return Math.floor(diff / 60000) + '分钟前';
+            if (diff < 86400000) return Math.floor(diff / 3600000) + '小时前';
+            return d.toLocaleDateString('zh-CN');
+        }
+
+        // 退出
+        function logout() {
+            document.getElementById('leaveModal').classList.add('show');
+        }
+
+        function closeModal() {
+            document.getElementById('leaveModal').classList.remove('show');
+        }
+
+        function confirmLogout() {
+            localStorage.removeItem('afrt_user');
+            location.reload();
+        }
+
+        // 提示
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2000);
+        }
+
+        init();
+    </script>
+</body>
+</html>

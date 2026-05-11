@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>会议室</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+        }
+        .header {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .logo {
+            font-size: 20px;
+            font-weight: 600;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .logo img {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            object-fit: contain;
+            background: white;
+            padding: 2px;
+        }
+        .logo svg {
+            width: 28px;
+            height: 28px;
+            color: #07c160;
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #07c160 0%, #06ad56 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .user-name {
+            color: #fff;
+            font-size: 14px;
+        }
+        .logout-btn {
+            padding: 6px 12px;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            border-radius: 6px;
+            color: #fff;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .logout-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px 24px;
+        }
+        .hero {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+        .hero h1 {
+            font-size: 36px;
+            color: #fff;
+            margin-bottom: 12px;
+        }
+        .hero p {
+            font-size: 16px;
+            color: rgba(255,255,255,0.6);
+        }
+        .action-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+        }
+        .action-card {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px;
+            padding: 32px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .action-card:hover {
+            transform: translateY(-4px);
+            border-color: #07c160;
+            box-shadow: 0 12px 40px rgba(7, 193, 96, 0.15);
+        }
+        .action-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .action-icon.green {
+            background: rgba(7, 193, 96, 0.15);
+            color: #07c160;
+        }
+        .action-icon.blue {
+            background: rgba(24, 144, 255, 0.15);
+            color: #1890ff;
+        }
+        .action-icon svg {
+            width: 28px;
+            height: 28px;
+        }
+        .action-card h3 {
+            font-size: 18px;
+            color: #fff;
+            margin-bottom: 8px;
+        }
+        .action-card p {
+            font-size: 14px;
+            color: rgba(255,255,255,0.5);
+        }
+        .join-form {
+            margin-top: 16px;
+            display: none;
+        }
+        .join-form.show {
+            display: block;
+        }
+        .join-input {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 14px;
+            margin-bottom: 12px;
+            outline: none;
+        }
+        .join-input:focus {
+            border-color: #07c160;
+        }
+        .join-input::placeholder {
+            color: rgba(255,255,255,0.4);
+        }
+        .join-btn {
+            width: 100%;
+            padding: 12px;
+            background: #07c160;
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .join-btn:hover {
+            background: #06ad56;
+        }
+        .recent-meetings {
+            margin-top: 48px;
+        }
+        .section-title {
+            font-size: 18px;
+            color: #fff;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .meeting-list {
+            background: rgba(255,255,255,0.03);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .meeting-item {
+            display: flex;
+            align-items: center;
+            padding: 16px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .meeting-item:hover {
+            background: rgba(255,255,255,0.05);
+        }
+        .meeting-item:last-child {
+            border-bottom: none;
+        }
+        .meeting-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            background: rgba(7, 193, 96, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 16px;
+            color: #07c160;
+        }
+        .meeting-details {
+            flex: 1;
+        }
+        .meeting-title {
+            font-size: 14px;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+        .meeting-meta {
+            font-size: 12px;
+            color: rgba(255,255,255,0.4);
+        }
+        .meeting-status {
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 12px;
+        }
+        .meeting-status.active {
+            background: rgba(7, 193, 96, 0.15);
+            color: #07c160;
+        }
+        .meeting-status.ended {
+            background: rgba(255,255,255,0.1);
+            color: rgba(255,255,255,0.4);
+        }
+        .empty-state {
+            text-align: center;
+            padding: 48px 24px;
+            color: rgba(255,255,255,0.4);
+        }
+        .empty-state svg {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 12px;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">
+            <img src="logo.png" alt="Logo">
+            <span>空中会议</span>
+        </div>
+        <div class="user-info">
+            <div class="user-avatar" id="userAvatar">用</div>
+            <span class="user-name" id="userName">用户</span>
+            <button class="logout-btn" onclick="logout()">退出</button>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="hero">
+            <h1>AFT集团线上服务平台</h1>
+            <p>安全可靠的线上平台，支持多人视频互动、屏幕共享、远程协作等功能</p>
+        </div>
+
+        <div class="action-cards">
+            <div class="action-card" onclick="createMeeting()">
+                <div class="action-icon green">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="8" x2="12" y2="16"/>
+                        <line x1="8" y1="12" x2="16" y2="12"/>
+                    </svg>
+                </div>
+                <h3>创建会议</h3>
+                <p>创建一个新的视频会议</p>
+            </div>
+
+            <div class="action-card" onclick="toggleJoinForm()">
+                <div class="action-icon blue">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+                        <polyline points="10 17 15 12 10 7"/>
+                        <line x1="15" y1="12" x2="3" y2="12"/>
+                    </svg>
+                </div>
+                <h3>加入会议</h3>
+                <p>输入会议号加入已有会议</p>
+                <div class="join-form" id="joinForm">
+                    <input type="text" class="join-input" id="meetingCode" placeholder="输入会议号，如 838-492-016">
+                    <button class="join-btn" onclick="joinMeeting()">加入</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="recent-meetings">
+            <div class="section-title">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12 6 12 12 16 14"/>
+                </svg>
+                最近会议
+            </div>
+            <div class="meeting-list" id="meetingList">
+                <div class="empty-state">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                        <line x1="16" y1="2" x2="16" y2="6"/>
+                        <line x1="8" y1="2" x2="8" y2="6"/>
+                        <line x1="3" y1="10" x2="21" y2="10"/>
+                    </svg>
+                    <p>暂无最近会议</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function init() {
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            if (!user.loggedIn) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            document.getElementById('userAvatar').textContent = (user.name || '用户').charAt(0).toUpperCase();
+            document.getElementById('userName').textContent = user.name || '用户';
+
+            loadRecentMeetings();
+        }
+
+        function loadRecentMeetings() {
+            const meetings = JSON.parse(localStorage.getItem('recentMeetings') || '[]');
+            const list = document.getElementById('meetingList');
+
+            if (meetings.length === 0) {
+                list.innerHTML = `
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                            <line x1="16" y1="2" x2="16" y2="6"/>
+                            <line x1="8" y1="2" x2="8" y2="6"/>
+                            <line x1="3" y1="10" x2="21" y2="10"/>
+                        </svg>
+                        <p>暂无最近会议</p>
+                    </div>
+                `;
+                return;
+            }
+
+            list.innerHTML = meetings.map(m => `
+                <div class="meeting-item" onclick="joinRecentMeeting('${m.id}')">
+                    <div class="meeting-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M23 7l-7 5 7 5V7z"/>
+                            <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+                        </svg>
+                    </div>
+                    <div class="meeting-details">
+                        <div class="meeting-title">${m.title}</div>
+                        <div class="meeting-meta">会议号: ${m.id} · ${m.time}</div>
+                    </div>
+                    <div class="meeting-status ${m.status}">${m.status === 'active' ? '进行中' : '已结束'}</div>
+                </div>
+            `).join('');
+        }
+
+        function toggleJoinForm() {
+            document.getElementById('joinForm').classList.toggle('show');
+        }
+
+        function createMeeting() {
+            const meetingId = generateMeetingId();
+            const title = '视频会议 ' + new Date().toLocaleString('zh-CN', {
+                month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit'
+            });
+
+            const meeting = {
+                id: meetingId,
+                title: title,
+                time: '刚刚',
+                status: 'active'
+            };
+
+            // 保存到最近会议
+            const recent = JSON.parse(localStorage.getItem('recentMeetings') || '[]');
+            recent.unshift(meeting);
+            localStorage.setItem('recentMeetings', JSON.stringify(recent.slice(0, 5)));
+
+            // 保存当前会议信息
+            localStorage.setItem('meeting', JSON.stringify(meeting));
+
+            // 跳转到会议室
+            window.location.href = `meeting.html?id=${meetingId}&title=${encodeURIComponent(title)}`;
+        }
+
+        function joinMeeting() {
+            const code = document.getElementById('meetingCode').value.trim();
+            if (!code) {
+                alert('请输入会议号');
+                return;
+            }
+
+            const title = '加入会议';
+
+            const meeting = {
+                id: code,
+                title: title,
+                time: '刚刚',
+                status: 'active'
+            };
+
+            // 保存到最近会议
+            const recent = JSON.parse(localStorage.getItem('recentMeetings') || '[]');
+            const existing = recent.findIndex(m => m.id === code);
+            if (existing !== -1) {
+                recent.splice(existing, 1);
+            }
+            recent.unshift(meeting);
+            localStorage.setItem('recentMeetings', JSON.stringify(recent.slice(0, 5)));
+
+            // 保存当前会议信息
+            localStorage.setItem('meeting', JSON.stringify(meeting));
+
+            // 跳转到会议室
+            window.location.href = `meeting.html?id=${code}&title=${encodeURIComponent(title)}`;
+        }
+
+        function joinRecentMeeting(id) {
+            const meetings = JSON.parse(localStorage.getItem('recentMeetings') || '[]');
+            const meeting = meetings.find(m => m.id === id);
+            if (meeting) {
+                localStorage.setItem('meeting', JSON.stringify(meeting));
+                window.location.href = `meeting.html?id=${meeting.id}&title=${encodeURIComponent(meeting.title)}`;
+            }
+        }
+
+        function generateMeetingId() {
+            const part = () => Math.floor(100 + Math.random() * 900);
+            return `${part()}-${part()}-${part()}`;
+        }
+
+        function logout() {
+            localStorage.removeItem('user');
+            localStorage.removeItem('meeting');
+            window.location.href = 'login.html';
+        }
+
+        init();
+    </script>
+</body>
+</html>
